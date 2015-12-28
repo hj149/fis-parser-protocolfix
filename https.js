@@ -51,7 +51,7 @@ https.prototype.parse = function (content, hostmap, mode) {
             }
         }
     }
-    console.log('总计有:' + self.caseNumber);
+    // console.log('总计有:' + self.caseNumber);
     if (self.error_result.length) {
         //fis.log.error
         var log = '未处理url协议\n修改方案：js语境中用 "__protocol" 方法把url包起来;smarty变量尾部添加 "|protocol" 修饰器\n'

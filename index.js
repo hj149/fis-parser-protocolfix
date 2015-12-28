@@ -31,7 +31,7 @@ module.exports = function(content, file, conf){
         'g.hiphotos.baidu.com': 'https://gss0.baidu.com/-fo3dSag_xI4khGko9WTAnF6hhy',
         'hiphotos.baidu.com': 'https://gss0.baidu.com/7LsWdDW5_xN3otqbppnN2DJv',
         'nsclick.baidu.com': 'https://gss0.baidu.com/8qUJcD3n0sgCo2Kml5_Y_D3',
-        'img.baidu.com': 'https://gss0.baidu.com/70cFsjip0QIZ8tyhnq',
+        'img.baidu.com': 'https://gss0.baidu.com/70cFsjip0QIZ8tyhnq'
         // 'su.bdimg.com': 'https://test.bdstatic.com',
         // 'p.tanx.com': 'https://test.bdstatic.com',
         // 's0.hao123img.com': 'https://test.bdstatic.com',
@@ -42,6 +42,13 @@ module.exports = function(content, file, conf){
         // 'ufo.baidu.com': 'https://test.bdstatic.com',
         // 'passport.bdimg.com': 'https://test.bdstatic.com',
         // 'v.baidu.com': 'https://v.baidu.com'
+    }
+    if (conf.hostMap) {
+        for (var key in conf.hostMap ) {
+            if (!hostMap[key]) {
+                hostMap[key] = conf.hostMap[key];
+            }
+        }
     }
     cont = https.check(content, file, hostMap, mode);
     return cont;
