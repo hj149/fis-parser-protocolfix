@@ -45,7 +45,7 @@ module.exports = function(content, file, conf){
     }
     if (conf.hostMap) {
         for (var key in conf.hostMap ) {
-            if (!hostMap[key]) {
+            if (conf.hostMap[key]) {
                 hostMap[key] = conf.hostMap[key];
             }
         }

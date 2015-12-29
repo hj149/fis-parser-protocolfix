@@ -33,7 +33,7 @@ https.prototype.parse = function (content, hostmap, mode) {
             self.rawContent = self.rawContent.substr(1);
             if (self.fileContent.substr(-8) == '{%head%}') {
                 self.fileContent += ('\n{%$protocolHostMap = json_decode(\''
-                    + JSON.stringify(self.hostmap) +'\')%}\n'
+                    + JSON.stringify(self.hostmap).replace(/\\\\/g, '') +'\')%}\n'
                     + '<script type="text/javascript">'
                     + 'window["__protocol"] = function (url) {'
                     + '       var res = url;'
