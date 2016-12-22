@@ -1,6 +1,6 @@
 {
   "name": "fis-parser-protocolfix",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A fis plugin for turning pages from http to https protocol",
   "main": "index.js",
   "scripts": {
