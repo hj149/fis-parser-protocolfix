@@ -84,7 +84,7 @@ https.prototype.fixUrl = function (url) {
         res = url.replace(/\|protocol_none/gm, '');
         return res;
     }
-    if (url.match(/^[^(http|https|\/\/|\.)].+\.(jpg|png|gif|jpeg)$/g)) {
+    if (url.match(/^(?!http|https|\/\/|\.).+\.(jpg|png|gif|jpeg)$/g)) {
         return url;
     }
     // 第一步，如果能够匹配到就直接替换
