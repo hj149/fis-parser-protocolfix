@@ -2,7 +2,6 @@
  * http://video.baidu.com/
  */
 
-
 'use strict';
 function https () {
     this.caseNumber = 0;
@@ -16,41 +15,48 @@ https.prototype.parse = function (content, hostmap, mode) {
     self.fileContent = '';
     self.hostmap = hostmap;
     self.mode = mode;
+    self.inAtag = false; //是否在a标签内部
     var res;
     while (self.rawContent.length) {
         var matchKey = false;
         for (var i = 0; i < self.keyword.length; i++) {
-            var reg = new RegExp('^\\W(' + self.keyword[i] + ')\\W', 'gm');
+            var reg = new RegExp('\\W(' + self.keyword[i] + ')\\W', 'gm');
             if (reg.exec(self.rawContent) != null) {
-                matchKey = [reg.lastIndex - 1, self.keyword[i]];
-                break;
-            } 
+                if(!matchKey || (reg.lastIndex - 1) < matchKey[0]) {
+                    matchKey = [reg.lastIndex - 1, self.keyword[i]];
+                }
+            }
 
         }
         if (matchKey) {
             self.fixKeyUrl(matchKey[0], matchKey[1]);
         } else {
-            self.fileContent += self.rawContent[0];
-            self.rawContent = self.rawContent.substr(1);
-            if (self.fileContent.substr(-8) == '{%head%}') {
-                self.fileContent += ('\n{%$protocolHostMap = json_decode(\''
-                    + JSON.stringify(self.hostmap).replace(/\\\\/g, '') +'\')%}\n'
-                    + '<script type="text/javascript">'
-                    + 'window["__protocol"] = function (url) {'
-                    + '       var res = url;'
-                    + '       var hostmap = ' + JSON.stringify(self.hostmap) + ';'
-                    + '       for (var hostReg in hostmap) {'
-                    + '          var reg = new RegExp("((http|https)\:)?(\/\/)?" + hostReg);'
-                    + '           res = url.replace(reg, hostmap[hostReg]);'
-                    + '           if (res != url) {'
-                    + '               return res;'
-                    + '           }'
-                    + '       }'
-                    + '       return res;'
-                    + '   }'
-                    + '</script>\n');
-            }
+            self.fileContent += self.rawContent;
+            self.rawContent = '';
         }
+    }
+    var headPos = self.fileContent.indexOf('{%head%}');
+    if (headPos != -1) {
+        var before = self.fileContent.substr(0, headPos + 8);
+        var after = self.fileContent.substr(headPos + 8);
+        self.fileContent = before
+            + ('\n{%$protocolHostMap = json_decode(\''
+            + JSON.stringify(self.hostmap).replace(/\\\\/g, '') +'\')%}\n'
+            + '<script type="text/javascript">'
+            + 'window["__protocol"] = function (url) {'
+            + '       var res = url;'
+            + '       var hostmap = ' + JSON.stringify(self.hostmap) + ';'
+            + '       for (var hostReg in hostmap) {'
+            + '          var reg = new RegExp("^((http|https)\:)?(\/\/)?" + hostReg);'
+            + '           res = url.replace(reg, hostmap[hostReg]);'
+            + '           if (res != url) {'
+            + '               return res;'
+            + '           }'
+            + '       }'
+            + '       return res;'
+            + '   }'
+            + '</script>\n')
+            + after;
     }
     // console.log('总计有:' + self.caseNumber);
     if (self.error_result.length) {
@@ -58,7 +64,7 @@ https.prototype.parse = function (content, hostmap, mode) {
         var log = '未处理url协议\n修改方案：js语境中用 "__protocol" 方法把url包起来;smarty变量尾部添加 "|protocol" 修饰器\n'
             + '所在文件：' + self.fileInfo.realpath + '\n'
             + self.error_result.join('\n')
-            + '\n********************************************************************************\n\n';
+            + '\n--------------------------------------------------------------------------------------------------------------------------------------\n\n';
         fis.util.write('./protocol-fix.log', log, null, true);
 
     }
@@ -77,6 +83,9 @@ https.prototype.fixUrl = function (url) {
     if (url.indexOf('|protocol_none') != -1) {
         res = url.replace(/\|protocol_none/gm, '');
         return res;
+    }
+    if (url.match(/^[^(http|https|\/\/|\.)].+\.(jpg|png|gif|jpeg)$/g)) {
+        return url;
     }
     // 第一步，如果能够匹配到就直接替换
     res = this.fixProtocol(url);
@@ -105,6 +114,23 @@ https.prototype.fixProtocol = function (url) {
     return res;
 }
 
+https.prototype.isInAtag = function () {
+    // 查找a标签
+    var self = this;
+    var mark = 0;
+    var len = 30;
+    var pos = self.fileContent.lastIndexOf('<a ');
+    if (pos == -1) {
+        return false;
+    }
+    var content = self.fileContent.substr(pos + 3);
+    if (content.lastIndexOf('</a>') == -1) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 https.prototype.fixKeyUrl = function (pos, key) {
     var self = this;
     self.fileContent += self.rawContent.substr(0, pos);
@@ -113,18 +139,23 @@ https.prototype.fixKeyUrl = function (pos, key) {
     var mark = 0;
     var isBgImage = false;
     var quotes = 0;
+    if (key == 'href' && self.isInAtag()) {
+        return;
+    }
+    // 查找链接的开头位置
     while (true) {
         if (self.rawContent == '' || self.rawContent[0] == '=' && (self.rawContent[1] == '>' || self.rawContent[1] == '=')) {
             return;
         }
 
+
         if (key == 'background' && self.rawContent[mark] != '-' || key == 'background-image') {
-            if(self.rawContent.substr(mark, mark + 4) == 'url('){
+            if (self.rawContent.substr(mark, mark + 4) == 'url(') {
                 isBgImage = true;
                 self.fileContent += self.rawContent.substr(0, mark + 4);
                 self.rawContent = self.rawContent.substr(mark + 4);
                 break;
-            }else{
+            } else {
                 if (self.rawContent[0] == ';') {
                     return;
                 }
@@ -152,6 +183,7 @@ https.prototype.fixKeyUrl = function (pos, key) {
     }
     var urlhead = self.rawContent[0];
     var plus = 0;
+    // 查找链接的结束位置
     while (true) {
         mark++;
         if (mark > self.rawContent.length -1) {
@@ -169,7 +201,7 @@ https.prototype.fixKeyUrl = function (pos, key) {
                 }
             }
         }
-        
+
         if(quotes) continue;
 
         if (isBgImage && self.rawContent[mark] == ')') {
@@ -199,9 +231,9 @@ https.prototype.fixKeyUrl = function (pos, key) {
     };*/
     var fixedUrl = self.fixUrl(url);
     if (fixedUrl === false) {
-        self.error_result.push('case' + (self.error_result.length+1) + ':\n'
-            + ' 命中url：' + url + '\n'
-            + ' 代码语境：...' + self.fileContent.substr(-20) + url + self.rawContent.substr(0, 20) + '...');
+        self.error_result.push('case' + (self.error_result.length+1)
+        + ': line ' + self.fileContent.split('\n').length + ' --> ' + url
+        + '\n\t ....' + self.fileContent.substr(-20) + url + self.rawContent.substr(0, 20) + '....');
         self.fileContent += url;
     } else {
         self.fileContent += fixedUrl;
@@ -223,4 +255,3 @@ exports.check = function (content, file, hostmap, mode) {
         return content.replace(/(__protocol|\|protocol)/gm, '');
     }
 }
-

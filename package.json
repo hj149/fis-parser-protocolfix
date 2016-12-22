@@ -14,7 +14,9 @@
     "fis",
     "https"
   ],
-  "author": "hejie",
+  "author": {
+    "name": "hejie"
+  },
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/hj149/fis-parser-protocolfix/issues"
