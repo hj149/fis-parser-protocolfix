@@ -2,9 +2,6 @@
 **插件功能**  
 > fis插件，用于解析模版中所有的 'src', 'action', 'href', 'background','background-image'相关的链接，将它们的http协议替换成https。
 
-**安装命令**
-> npm install -g http://gitlab.baidu.com/videofe/fis-parser-protocolfix/repository/archive.tar.gz?ref=master
-
 **使用方法**
 >fis-conf.js中配置在parser阶段  
 >编译时会产出一份protocol-fix.log的日志，里面记录了模块中所有待处理的url链接，根据需要对链接做相应的处理，js语境中用 "__protocol" 方法把url包起来;smarty变量尾部添加 "|protocol" 修饰器
