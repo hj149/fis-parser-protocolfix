@@ -2,6 +2,7 @@
  * http://video.baidu.com/
  */
 
+
 'use strict';
 function https () {
     this.caseNumber = 0;
